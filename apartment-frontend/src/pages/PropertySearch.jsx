@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function PropertySearch() {
@@ -11,39 +11,42 @@ export default function PropertySearch() {
   });
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [postcodeError, setPostcodeError] = useState("");
+  const hasFetched = useRef(false);
 
-  const fetchProperties = () => {
-    setLoading(true);
+  const ukPostcodeRegex = /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i;
+
+  const buildQueryString = useCallback((currentFilters) => {
     const params = new URLSearchParams();
-    if (filters.postcode) params.set("postcode", filters.postcode);
-    if (filters.city) params.set("city", filters.city);
-    if (filters.type) params.set("type", filters.type);
-    if (filters.minPrice) params.set("minPrice", filters.minPrice);
-    if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
-    if (filters.bedrooms) params.set("bedrooms", filters.bedrooms);
+    if (currentFilters.postcode) params.set("postcode", currentFilters.postcode);
+    if (currentFilters.city) params.set("city", currentFilters.city);
+    if (currentFilters.type) params.set("type", currentFilters.type);
+    if (currentFilters.minPrice) params.set("minPrice", currentFilters.minPrice);
+    if (currentFilters.maxPrice) params.set("maxPrice", currentFilters.maxPrice);
+    if (currentFilters.bedrooms) params.set("bedrooms", currentFilters.bedrooms);
+    return params.toString();
+  }, []);
 
-    fetch(`http://localhost:5002/properties?${params.toString()}`)
+  const fetchProperties = useCallback((currentFilters) => {
+    setLoading(true);
+    const qs = buildQueryString(currentFilters || filters);
+    fetch(`http://localhost:5002/properties?${qs}`)
       .then((res) => res.json())
       .then((data) => { setProperties(data); setLoading(false); })
       .catch((err) => { console.error("Error:", err); setLoading(false); });
-  };
+  }, [filters, buildQueryString]);
 
-  useEffect(() => { fetchProperties(); }, []);
+  // Initial fetch on first render
+  if (!hasFetched.current) {
+    hasFetched.current = true;
+    const qs = buildQueryString(filters);
+    fetch(`http://localhost:5002/properties?${qs}`)
+      .then((res) => res.json())
+      .then((data) => { setProperties(data); setLoading(false); })
+      .catch((err) => { console.error("Error:", err); setLoading(false); });
+  }
 
   const handleChange = (e) => setFilters({ ...filters, [e.target.name]: e.target.value });
-  const handleSearch = () => {
-    if (!validatePostcode(filters.postcode)) return;
-    fetchProperties();
-  };
-  const handleClear = () => {
-    setFilters({ postcode: "", city: "", type: "", minPrice: "", maxPrice: "", bedrooms: "" });
-    setTimeout(() => {
-      fetch("http://localhost:5002/properties").then((res) => res.json()).then(setProperties).catch(console.error);
-    }, 0);
-  };
-
-  const [postcodeError, setPostcodeError] = useState("");
-  const ukPostcodeRegex = /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i;
 
   const validatePostcode = (value) => {
     if (value && !ukPostcodeRegex.test(value.trim())) {
@@ -52,6 +55,17 @@ export default function PropertySearch() {
     }
     setPostcodeError("");
     return true;
+  };
+
+  const handleSearch = () => {
+    if (!validatePostcode(filters.postcode)) return;
+    fetchProperties(filters);
+  };
+
+  const handleClear = () => {
+    const cleared = { postcode: "", city: "", type: "", minPrice: "", maxPrice: "", bedrooms: "" };
+    setFilters(cleared);
+    fetchProperties(cleared);
   };
 
   const inputClass = "w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition bg-white placeholder:text-slate-400";
