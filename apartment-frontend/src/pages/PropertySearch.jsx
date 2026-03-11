@@ -12,7 +12,7 @@ export default function PropertySearch() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [postcodeError, setPostcodeError] = useState("");
-  const hasFetched = useRef(false);
+  const initialFetch = useRef(null);
 
   const ukPostcodeRegex = /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i;
 
@@ -36,11 +36,9 @@ export default function PropertySearch() {
       .catch((err) => { console.error("Error:", err); setLoading(false); });
   }, [filters, buildQueryString]);
 
-  // Initial fetch on first render
-  if (!hasFetched.current) {
-    hasFetched.current = true;
-    const qs = buildQueryString(filters);
-    fetch(`http://localhost:5002/properties?${qs}`)
+  // Initial fetch on first render (using null-check pattern for refs during render)
+  if (initialFetch.current == null) {
+    initialFetch.current = fetch(`http://localhost:5002/properties?${buildQueryString(filters)}`)
       .then((res) => res.json())
       .then((data) => { setProperties(data); setLoading(false); })
       .catch((err) => { console.error("Error:", err); setLoading(false); });
