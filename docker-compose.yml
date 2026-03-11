@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: apartment-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - apartment-network
+
+  # Auth Service
+  auth-service:
+    build: ./services/auth-service
+    container_name: apartment-auth
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - MONGO_URI=mongodb://mongodb:27017/apartment-auth
+      - JWT_SECRET=${JWT_SECRET:-SUPERSECRETKEY123}
+      - FRONTEND_URL=http://localhost:5173
+    depends_on:
+      - mongodb
+    networks:
+      - apartment-network
+
+  # Property Service
+  property-service:
+    build: ./services/property-service
+    container_name: apartment-property
+    ports:
+      - "5002:5002"
+    environment:
+      - PORT=5002
+      - MONGO_URI=mongodb://mongodb:27017/apartment-properties
+      - JWT_SECRET=${JWT_SECRET:-SUPERSECRETKEY123}
+      - FRONTEND_URL=http://localhost:5173
+    volumes:
+      - property-uploads:/app/src/uploads
+    depends_on:
+      - mongodb
+    networks:
+      - apartment-network
+
+  # Residency Service
+  residency-service:
+    build: ./services/residency-service
+    container_name: apartment-residency
+    ports:
+      - "5003:5003"
+    environment:
+      - PORT=5003
+      - MONGO_URI=mongodb://mongodb:27017/apartment-residencies
+      - JWT_SECRET=${JWT_SECRET:-SUPERSECRETKEY123}
+      - FRONTEND_URL=http://localhost:5173
+    depends_on:
+      - mongodb
+    networks:
+      - apartment-network
+
+volumes:
+  mongo-data:
+  property-uploads:
+
+networks:
+  apartment-network:
+    driver: bridge

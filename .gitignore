@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment variables (NEVER commit these)
+.env
+
+# Uploaded files
+services/property-service/src/uploads/*
+!services/property-service/src/uploads/.gitkeep
+
+# Build output
+apartment-frontend/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Local config
+.claude/
+
+# Performance test reports
+performance-tests/reports/
+!performance-tests/reports/.gitkeep
+

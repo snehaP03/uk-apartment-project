@@ -1,0 +1,52 @@
+config:
+  target: "http://localhost:5001"
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm-up"
+    - duration: 60
+      arrivalRate: 20
+      name: "Sustained load"
+    - duration: 30
+      arrivalRate: 50
+      name: "Peak load"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Health check"
+    weight: 3
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+
+  - name: "Register and login flow"
+    weight: 2
+    flow:
+      - post:
+          url: "/auth/register"
+          json:
+            name: "Test User {{ $randomNumber(1000,9999) }}"
+            email: "loadtest{{ $randomNumber(10000,99999) }}@test.com"
+            password: "TestPass123!"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - think: 1
+      - post:
+          url: "/auth/login"
+          json:
+            email: "loadtest{{ $randomNumber(10000,99999) }}@test.com"
+            password: "TestPass123!"
+
+  - name: "Login only"
+    weight: 5
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "test@test.com"
+            password: "TestPass123!"

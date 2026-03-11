@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f8fafc;
+    color: #0f172a;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #root {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+  }
+
+  a {
+    color: #6366f1;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  input, select, textarea {
+    font-family: inherit;
+  }
+}

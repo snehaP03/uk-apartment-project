@@ -1,0 +1,32 @@
+config:
+  target: "http://localhost:5003"
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm-up"
+    - duration: 60
+      arrivalRate: 20
+      name: "Sustained load"
+    - duration: 30
+      arrivalRate: 50
+      name: "Peak load"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Health check"
+    weight: 5
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+
+  - name: "Get residents for a property"
+    weight: 5
+    flow:
+      - get:
+          url: "/properties/000000000000000000000001/residents"
+          expect:
+            - statusCode: 200

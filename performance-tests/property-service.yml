@@ -1,0 +1,45 @@
+config:
+  target: "http://localhost:5002"
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm-up"
+    - duration: 60
+      arrivalRate: 20
+      name: "Sustained load"
+    - duration: 30
+      arrivalRate: 50
+      name: "Peak load"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Health check"
+    weight: 2
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+
+  - name: "List all properties"
+    weight: 5
+    flow:
+      - get:
+          url: "/properties"
+          expect:
+            - statusCode: 200
+
+  - name: "Search properties with filters"
+    weight: 3
+    flow:
+      - get:
+          url: "/properties?city=London&type=apartment&minPrice=500&maxPrice=2000"
+          expect:
+            - statusCode: 200
+      - think: 1
+      - get:
+          url: "/properties?postcode=SW1&bedrooms=2"
+          expect:
+            - statusCode: 200
