@@ -8,6 +8,6 @@ RUN npm ci --omit=dev
 COPY src/ ./src/
 RUN mkdir -p /app/src/uploads
 
-EXPOSE 5002
+EXPOSE 10000
 
 CMD ["node", "src/index.js"]

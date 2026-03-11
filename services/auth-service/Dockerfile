@@ -7,6 +7,6 @@ RUN npm ci --omit=dev
 
 COPY src/ ./src/
 
-EXPOSE 5001
+EXPOSE 10000
 
 CMD ["node", "src/index.js"]

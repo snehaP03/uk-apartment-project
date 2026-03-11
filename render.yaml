@@ -2,14 +2,16 @@ services:
   # Auth Service
   - type: web
     name: auth-service
-    runtime: node
+    runtime: docker
     rootDir: services/auth-service
-    buildCommand: npm ci --omit=dev
-    startCommand: node src/index.js
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: MONGO_URI
         sync: false
       - key: JWT_SECRET
@@ -24,14 +26,16 @@ services:
   # Property Service
   - type: web
     name: property-service
-    runtime: node
+    runtime: docker
     rootDir: services/property-service
-    buildCommand: npm ci --omit=dev
-    startCommand: node src/index.js
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: MONGO_URI
         sync: false
       - key: JWT_SECRET
@@ -42,14 +46,16 @@ services:
   # Residency Service
   - type: web
     name: residency-service
-    runtime: node
+    runtime: docker
     rootDir: services/residency-service
-    buildCommand: npm ci --omit=dev
-    startCommand: node src/index.js
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: MONGO_URI
         sync: false
       - key: JWT_SECRET
@@ -60,18 +66,10 @@ services:
   # Frontend (Static Site)
   - type: web
     name: apartment-frontend
-    runtime: static
+    runtime: docker
     rootDir: apartment-frontend
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: public, max-age=0, must-revalidate
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
       - key: VITE_AUTH_URL
         sync: false
