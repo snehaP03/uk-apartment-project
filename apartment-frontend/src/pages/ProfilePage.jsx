@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { PROPERTY_URL, RESIDENCY_URL } from "../config/api";
 
 export default function ProfilePage() {
   const { user, token } = useAuth();
@@ -14,17 +15,17 @@ export default function ProfilePage() {
   const authHeaders = useMemo(() => ({ "Content-Type": "application/json", Authorization: `Bearer ${token}` }), [token]);
 
   useEffect(() => {
-    fetch("http://localhost:5002/my-properties", { headers: authHeaders }).then((r) => r.json()).then(setMyProperties).catch(console.error);
-    fetch("http://localhost:5003/my-residencies", { headers: authHeaders }).then((r) => r.json()).then(setMyResidencies).catch(console.error);
-    fetch("http://localhost:5003/contact-requests/incoming", { headers: authHeaders }).then((r) => r.json()).then(setIncomingRequests).catch(console.error);
-    fetch("http://localhost:5003/contact-requests/outgoing", { headers: authHeaders }).then((r) => r.json()).then(setOutgoingRequests).catch(console.error);
+    fetch("${PROPERTY_URL}/my-properties", { headers: authHeaders }).then((r) => r.json()).then(setMyProperties).catch(console.error);
+    fetch("${RESIDENCY_URL}/my-residencies", { headers: authHeaders }).then((r) => r.json()).then(setMyResidencies).catch(console.error);
+    fetch("${RESIDENCY_URL}/contact-requests/incoming", { headers: authHeaders }).then((r) => r.json()).then(setIncomingRequests).catch(console.error);
+    fetch("${RESIDENCY_URL}/contact-requests/outgoing", { headers: authHeaders }).then((r) => r.json()).then(setOutgoingRequests).catch(console.error);
   }, [authHeaders]);
 
   const handleRequestAction = async (requestId, status) => {
     try {
-      const res = await fetch(`http://localhost:5003/contact-requests/${requestId}`, { method: "PATCH", headers: authHeaders, body: JSON.stringify({ status }) });
+      const res = await fetch(`${RESIDENCY_URL}/contact-requests/${requestId}`, { method: "PATCH", headers: authHeaders, body: JSON.stringify({ status }) });
       const data = await res.json(); alert(data.message);
-      const updated = await fetch("http://localhost:5003/contact-requests/incoming", { headers: authHeaders }); setIncomingRequests(await updated.json());
+      const updated = await fetch("${RESIDENCY_URL}/contact-requests/incoming", { headers: authHeaders }); setIncomingRequests(await updated.json());
     } catch { alert("Failed to update request."); }
   };
 
@@ -69,7 +70,7 @@ export default function ProfilePage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {myProperties.map((p) => (
               <div key={p._id} onClick={() => navigate(`/property/${p._id}`)} className="group bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition cursor-pointer">
-                <img src={`http://localhost:5002/uploads/${p.imageKey}`} alt="Property" onError={(e) => { e.target.src = "/property-images/1.jpg"; }} className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src={`${PROPERTY_URL}/uploads/${p.imageKey}`} alt="Property" onError={(e) => { e.target.src = "/property-images/1.jpg"; }} className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="p-4">
                   <h3 className="text-sm font-bold text-slate-900 truncate">{p.addressLine1}</h3>
                   <p className="text-xs text-slate-400 mt-1">{p.city} &mdash; {p.postcode}</p>

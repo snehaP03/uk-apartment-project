@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { PROPERTY_URL } from "../config/api";
 
 export default function PropertySearch() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function PropertySearch() {
   const fetchProperties = useCallback((currentFilters) => {
     setLoading(true);
     const qs = buildQueryString(currentFilters || filters);
-    fetch(`http://localhost:5002/properties?${qs}`)
+    fetch(`${PROPERTY_URL}/properties?${qs}`)
       .then((res) => res.json())
       .then((data) => { setProperties(data); setLoading(false); })
       .catch((err) => { console.error("Error:", err); setLoading(false); });
@@ -38,7 +39,7 @@ export default function PropertySearch() {
 
   // Initial fetch on first render (using null-check pattern for refs during render)
   if (initialFetch.current == null) {
-    initialFetch.current = fetch(`http://localhost:5002/properties?${buildQueryString(filters)}`)
+    initialFetch.current = fetch(`${PROPERTY_URL}/properties?${buildQueryString(filters)}`)
       .then((res) => res.json())
       .then((data) => { setProperties(data); setLoading(false); })
       .catch((err) => { console.error("Error:", err); setLoading(false); });
@@ -179,7 +180,7 @@ export default function PropertySearch() {
             <div key={property._id} onClick={() => navigate(`/property/${property._id}`)}
               className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 cursor-pointer">
               <div className="relative overflow-hidden">
-                <img src={`http://localhost:5002/uploads/${property.imageKey}`} alt="Property"
+                <img src={`${PROPERTY_URL}/uploads/${property.imageKey}`} alt="Property"
                   onError={(e) => { e.target.src = "/property-images/1.jpg"; }}
                   className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
                 {property.type && (

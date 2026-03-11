@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { AUTH_URL } from "../config/api";
 
 const AuthContext = createContext(null);
 
@@ -13,7 +14,7 @@ export function AuthProvider({ children }) {
   // Refresh user data from server on mount to keep role and other fields up to date
   useEffect(() => {
     if (!token) return;
-    fetch("http://localhost:5001/auth/me", {
+    fetch(`${AUTH_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : Promise.reject()))

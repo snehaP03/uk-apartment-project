@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { PROPERTY_URL } from "../config/api";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ export default function HomePage() {
   const [featured, setFeatured] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5002/properties")
+    fetch("${PROPERTY_URL}/properties")
       .then((res) => res.json())
       .then((data) => setFeatured(data.slice(0, 6)))
       .catch(console.error);
@@ -132,7 +133,7 @@ export default function HomePage() {
             {featured.length > 0 ? featured.map((property) => (
               <div key={property._id} className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 cursor-pointer" onClick={() => navigate(`/property/${property._id}`)}>
                 <div className="relative overflow-hidden">
-                  <img src={`http://localhost:5002/uploads/${property.imageKey}`} alt={property.addressLine1}
+                  <img src={`${PROPERTY_URL}/uploads/${property.imageKey}`} alt={property.addressLine1}
                     onError={(e) => { e.target.src = "/property-images/1.jpg"; }}
                     className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500" />
                   {property.type && (

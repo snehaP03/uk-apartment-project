@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { RESIDENCY_URL } from "../config/api";
 
 export default function AdminDashboard() {
   const { user, token } = useAuth();
@@ -18,8 +19,8 @@ export default function AdminDashboard() {
     const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
     Promise.all([
-      fetch("http://localhost:5003/admin/residencies/pending", { headers }).then((r) => r.json()),
-      fetch("http://localhost:5003/admin/residencies/reported", { headers }).then((r) => r.json()),
+      fetch("${RESIDENCY_URL}/admin/residencies/pending", { headers }).then((r) => r.json()),
+      fetch("${RESIDENCY_URL}/admin/residencies/reported", { headers }).then((r) => r.json()),
     ])
       .then(([pendingData, reportedData]) => {
         setPending(pendingData);
@@ -34,7 +35,7 @@ export default function AdminDashboard() {
 
   const handleAction = async (id, status) => {
     try {
-      const res = await fetch(`http://localhost:5003/admin/residencies/${id}`, {
+      const res = await fetch(`${RESIDENCY_URL}/admin/residencies/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status }),
@@ -45,8 +46,8 @@ export default function AdminDashboard() {
       // Refresh data
       const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
       const [p, r] = await Promise.all([
-        fetch("http://localhost:5003/admin/residencies/pending", { headers }).then((r) => r.json()),
-        fetch("http://localhost:5003/admin/residencies/reported", { headers }).then((r) => r.json()),
+        fetch("${RESIDENCY_URL}/admin/residencies/pending", { headers }).then((r) => r.json()),
+        fetch("${RESIDENCY_URL}/admin/residencies/reported", { headers }).then((r) => r.json()),
       ]);
       setPending(p);
       setReported(r);

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { PROPERTY_URL, RESIDENCY_URL } from "../config/api";
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -14,17 +15,17 @@ export default function PropertyDetails() {
   const [reportReason, setReportReason] = useState("");
 
   useEffect(() => {
-    fetch(`http://localhost:5002/properties/${id}`).then((r) => r.json()).then(setProperty).catch(console.error);
+    fetch(`${PROPERTY_URL}/properties/${id}`).then((r) => r.json()).then(setProperty).catch(console.error);
   }, [id]);
 
   useEffect(() => {
-    fetch(`http://localhost:5003/properties/${id}/residents`).then((r) => r.json()).then(setResidents).catch(console.error);
+    fetch(`${RESIDENCY_URL}/properties/${id}/residents`).then((r) => r.json()).then(setResidents).catch(console.error);
   }, [id]);
 
   const handleContactRequest = async (resident) => {
     if (!isLoggedIn) { alert("Please log in."); navigate("/login"); return; }
     try {
-      const res = await fetch("http://localhost:5003/contact-request", {
+      const res = await fetch("${RESIDENCY_URL}/contact-request", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ toUserId: resident.userId, propertyId: id, message: contactMessage }),
       });
@@ -35,7 +36,7 @@ export default function PropertyDetails() {
   const handleReport = async (residencyId) => {
     if (!reportReason.trim()) { alert("Please provide a reason."); return; }
     try {
-      const res = await fetch(`http://localhost:5003/residencies/${residencyId}/report`, {
+      const res = await fetch(`${RESIDENCY_URL}/residencies/${residencyId}/report`, {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ reason: reportReason }),
       });
@@ -46,7 +47,7 @@ export default function PropertyDetails() {
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this property?")) return;
     try {
-      const res = await fetch(`http://localhost:5002/properties/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${PROPERTY_URL}/properties/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json(); if (!res.ok) { alert(data.message); return; } alert("Property deleted."); navigate("/search");
     } catch { alert("Failed to delete property."); }
   };
@@ -64,7 +65,7 @@ export default function PropertyDetails() {
   return (
     <div>
       {/* Hero */}
-      <div className="relative h-72 sm:h-80 bg-cover bg-center" style={{ backgroundImage: `url('http://localhost:5002/uploads/${property.imageKey}')` }}>
+      <div className="relative h-72 sm:h-80 bg-cover bg-center" style={{ backgroundImage: `url('${PROPERTY_URL}/uploads/${property.imageKey}')` }}>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/40 to-transparent" />
         <div className="absolute bottom-6 left-6 sm:left-10 z-10">
           <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-lg">{property.addressLine1}</h1>

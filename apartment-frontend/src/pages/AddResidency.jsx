@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { RESIDENCY_URL } from "../config/api";
 
 export default function AddResidency() {
   const { id } = useParams();
@@ -13,7 +14,7 @@ export default function AddResidency() {
   const submitResidency = async () => {
     if (!isLoggedIn) { alert("Please log in first."); navigate("/login"); return; }
     try {
-      const res = await fetch("http://localhost:5003/residencies", {
+      const res = await fetch("${RESIDENCY_URL}/residencies", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ propertyId: id, fromYear, toYear, description }),
       });
