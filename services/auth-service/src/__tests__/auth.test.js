@@ -4,6 +4,7 @@ const { MongoMemoryServer } = require("mongodb-memory-server");
 
 // Set env before loading app
 process.env.JWT_SECRET = "test-secret-key";
+process.env.ENCRYPTION_KEY = "test-encryption-key-for-aes256";
 process.env.NODE_ENV = "test";
 // Simulate email configured for verification tests
 process.env.EMAIL_USER = "test@gmail.com";
@@ -16,6 +17,7 @@ jest.mock("../utils/mailer", () => ({
 
 const app = require("../app");
 const User = require("../models/User");
+const { encrypt, decrypt, hashForLookup } = require("../utils/encryption");
 
 let mongoServer;
 
@@ -40,7 +42,8 @@ async function registerAndVerify(name, email, password) {
         .post("/auth/register")
         .send({ name, email, password });
 
-    const user = await User.findOne({ email });
+    const hash = hashForLookup(email);
+    const user = await User.findOne({ emailHash: hash });
     user.isVerified = true;
     user.verificationCode = null;
     user.verificationCodeExpires = null;
@@ -58,8 +61,43 @@ describe("Auth Service", () => {
         });
     });
 
+    describe("Encryption Utility", () => {
+        it("should encrypt and decrypt text correctly", () => {
+            const original = "John Doe";
+            const encrypted = encrypt(original);
+            expect(encrypted).not.toBe(original);
+            expect(encrypted).toContain(":");
+            const decrypted = decrypt(encrypted);
+            expect(decrypted).toBe(original);
+        });
+
+        it("should produce different ciphertext for same input (random IV)", () => {
+            const text = "test@example.com";
+            const enc1 = encrypt(text);
+            const enc2 = encrypt(text);
+            expect(enc1).not.toBe(enc2); // Different IVs
+            expect(decrypt(enc1)).toBe(text);
+            expect(decrypt(enc2)).toBe(text);
+        });
+
+        it("should produce consistent hash for lookups", () => {
+            const email = "Test@Example.com";
+            const hash1 = hashForLookup(email);
+            const hash2 = hashForLookup(email);
+            expect(hash1).toBe(hash2);
+            expect(hash1.length).toBe(64); // SHA-256 hex
+        });
+
+        it("should handle null/empty gracefully", () => {
+            expect(encrypt(null)).toBeNull();
+            expect(decrypt(null)).toBeNull();
+            expect(encrypt("")).toBe("");
+            expect(decrypt("")).toBe("");
+        });
+    });
+
     describe("POST /auth/register", () => {
-        it("should register a new user with verification code", async () => {
+        it("should register a new user with encrypted fields", async () => {
             const res = await request(app)
                 .post("/auth/register")
                 .send({ name: "John", email: "john@test.com", password: "password123" });
@@ -68,21 +106,37 @@ describe("Auth Service", () => {
             expect(res.body.requiresVerification).toBe(true);
             expect(res.body.userId).toBeDefined();
 
-            const user = await User.findOne({ email: "john@test.com" });
+            // Verify data is encrypted in the database
+            const hash = hashForLookup("john@test.com");
+            const user = await User.findOne({ emailHash: hash });
             expect(user.isVerified).toBe(false);
             expect(user.verificationCode).toBeDefined();
             expect(user.verificationCode.length).toBe(6);
+            // Name and email should be encrypted (contain colons from AES-256-GCM format)
+            expect(user.name).toContain(":");
+            expect(user.email).toContain(":");
+            // Decrypted values should match original
+            expect(decrypt(user.name)).toBe("John");
+            expect(decrypt(user.email)).toBe("john@test.com");
+        });
+
+        it("should store emailHash for lookups", async () => {
+            await request(app)
+                .post("/auth/register")
+                .send({ name: "John", email: "john@test.com", password: "password123" });
+
+            const hash = hashForLookup("john@test.com");
+            const user = await User.findOne({ emailHash: hash });
+            expect(user).not.toBeNull();
+            expect(user.emailHash).toBe(hash);
         });
 
         it("should auto-verify when email not configured", async () => {
-            // Temporarily remove email config
             const savedUser = process.env.EMAIL_USER;
             const savedPass = process.env.EMAIL_PASS;
             process.env.EMAIL_USER = "your-email@gmail.com";
             process.env.EMAIL_PASS = "your-app-password";
 
-            // Need to re-require app to pick up env changes — but since it's cached,
-            // we test the logic directly instead
             const user = await User.create({
                 name: "Auto", email: "auto@test.com", password: "hashed",
                 isVerified: true, verificationCode: null,
@@ -137,7 +191,8 @@ describe("Auth Service", () => {
                 .post("/auth/register")
                 .send({ name: "John", email: "john@test.com", password: "password123" });
 
-            const user = await User.findOne({ email: "john@test.com" });
+            const hash = hashForLookup("john@test.com");
+            const user = await User.findOne({ emailHash: hash });
 
             const res = await request(app)
                 .post("/auth/verify-email")
@@ -146,7 +201,7 @@ describe("Auth Service", () => {
             expect(res.status).toBe(200);
             expect(res.body.message).toContain("verified successfully");
 
-            const verifiedUser = await User.findOne({ email: "john@test.com" });
+            const verifiedUser = await User.findOne({ emailHash: hash });
             expect(verifiedUser.isVerified).toBe(true);
             expect(verifiedUser.verificationCode).toBeNull();
         });
@@ -169,7 +224,8 @@ describe("Auth Service", () => {
                 .post("/auth/register")
                 .send({ name: "John", email: "john@test.com", password: "password123" });
 
-            const user = await User.findOne({ email: "john@test.com" });
+            const hash = hashForLookup("john@test.com");
+            const user = await User.findOne({ emailHash: hash });
             user.verificationCodeExpires = new Date(Date.now() - 1000);
             await user.save();
 
@@ -194,7 +250,7 @@ describe("Auth Service", () => {
     });
 
     describe("POST /auth/login", () => {
-        it("should login with verified account", async () => {
+        it("should login with verified account and return decrypted user", async () => {
             await registerAndVerify("John", "john@test.com", "password123");
 
             const res = await request(app)
@@ -205,6 +261,7 @@ describe("Auth Service", () => {
             expect(res.body.message).toBe("Login successful");
             expect(res.body.token).toBeDefined();
             expect(res.body.user.name).toBe("John");
+            expect(res.body.user.email).toBe("john@test.com");
         });
 
         it("should reject unverified account", async () => {
@@ -240,7 +297,7 @@ describe("Auth Service", () => {
     });
 
     describe("GET /auth/me", () => {
-        it("should return user info with valid token", async () => {
+        it("should return decrypted user info with valid token", async () => {
             await registerAndVerify("John", "john@test.com", "password123");
 
             const loginRes = await request(app)
@@ -253,10 +310,37 @@ describe("Auth Service", () => {
 
             expect(res.status).toBe(200);
             expect(res.body.user.name).toBe("John");
+            expect(res.body.user.email).toBe("john@test.com");
         });
 
         it("should reject request without token", async () => {
             const res = await request(app).get("/auth/me");
+            expect(res.status).toBe(401);
+        });
+    });
+
+    describe("DELETE /auth/account", () => {
+        it("should delete authenticated user account", async () => {
+            await registerAndVerify("John", "john@test.com", "password123");
+
+            const loginRes = await request(app)
+                .post("/auth/login")
+                .send({ email: "john@test.com", password: "password123" });
+
+            const res = await request(app)
+                .delete("/auth/account")
+                .set("Authorization", `Bearer ${loginRes.body.token}`);
+
+            expect(res.status).toBe(200);
+            expect(res.body.message).toBe("Account deleted successfully");
+
+            const hash = hashForLookup("john@test.com");
+            const user = await User.findOne({ emailHash: hash });
+            expect(user).toBeNull();
+        });
+
+        it("should reject without auth token", async () => {
+            const res = await request(app).delete("/auth/account");
             expect(res.status).toBe(401);
         });
     });

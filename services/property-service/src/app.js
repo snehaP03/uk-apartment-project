@@ -5,6 +5,7 @@ const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 const { body, validationResult } = require("express-validator");
 const Property = require("./models/Property");
 const authMiddleware = require("./middleware/authMiddleware");
@@ -154,6 +155,17 @@ app.delete("/properties/:id", authMiddleware, async (req, res) => {
         if (property.createdBy !== req.user.id) {
             return res.status(403).json({ message: "You can only delete your own properties" });
         }
+
+        // Clean up uploaded image file from disk
+        if (property.imageKey) {
+            const imagePath = path.join(__dirname, "uploads", property.imageKey);
+            fs.unlink(imagePath, (err) => {
+                if (err && err.code !== "ENOENT") {
+                    console.error("Failed to delete image file:", err.message);
+                }
+            });
+        }
+
         await Property.findByIdAndDelete(req.params.id);
         res.json({ message: "Property deleted successfully" });
     } catch (err) {

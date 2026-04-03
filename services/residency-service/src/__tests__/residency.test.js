@@ -113,6 +113,47 @@ describe("Residency Service", () => {
         });
     });
 
+    describe("DELETE /residencies/:id", () => {
+        it("should delete own residency", async () => {
+            const residency = await Residency.create({
+                userId: testUserId, userName: "Test User",
+                propertyId: "prop123", fromYear: "2020",
+            });
+
+            const res = await request(app)
+                .delete(`/residencies/${residency._id}`)
+                .set("Authorization", `Bearer ${authToken}`);
+
+            expect(res.status).toBe(200);
+            expect(res.body.message).toBe("Residency deleted successfully");
+
+            const deleted = await Residency.findById(residency._id);
+            expect(deleted).toBeNull();
+        });
+
+        it("should reject deleting another user's residency", async () => {
+            const residency = await Residency.create({
+                userId: otherUserId, userName: "Other User",
+                propertyId: "prop123", fromYear: "2020",
+            });
+
+            const res = await request(app)
+                .delete(`/residencies/${residency._id}`)
+                .set("Authorization", `Bearer ${authToken}`);
+
+            expect(res.status).toBe(403);
+        });
+
+        it("should return 404 for non-existent residency", async () => {
+            const fakeId = new mongoose.Types.ObjectId();
+            const res = await request(app)
+                .delete(`/residencies/${fakeId}`)
+                .set("Authorization", `Bearer ${authToken}`);
+
+            expect(res.status).toBe(404);
+        });
+    });
+
     describe("POST /residencies/:id/report", () => {
         it("should report a residency", async () => {
             const residency = await Residency.create({
@@ -251,6 +292,40 @@ describe("Residency Service", () => {
                 .send({ toUserId: testUserId, propertyId: "prop123" });
 
             expect(res.status).toBe(400);
+        });
+    });
+
+    describe("DELETE /contact-requests/:requestId", () => {
+        it("should delete own contact request", async () => {
+            const cr = await ContactRequest.create({
+                fromUserId: testUserId, fromUserName: "Test",
+                fromUserEmail: "test@test.com", toUserId: otherUserId,
+                propertyId: "prop123",
+            });
+
+            const res = await request(app)
+                .delete(`/contact-requests/${cr._id}`)
+                .set("Authorization", `Bearer ${authToken}`);
+
+            expect(res.status).toBe(200);
+            expect(res.body.message).toBe("Contact request deleted successfully");
+
+            const deleted = await ContactRequest.findById(cr._id);
+            expect(deleted).toBeNull();
+        });
+
+        it("should reject deleting another user's contact request", async () => {
+            const cr = await ContactRequest.create({
+                fromUserId: otherUserId, fromUserName: "Other",
+                fromUserEmail: "other@test.com", toUserId: testUserId,
+                propertyId: "prop123",
+            });
+
+            const res = await request(app)
+                .delete(`/contact-requests/${cr._id}`)
+                .set("Authorization", `Bearer ${authToken}`);
+
+            expect(res.status).toBe(403);
         });
     });
 

@@ -106,6 +106,26 @@ app.get("/my-residencies", authMiddleware, async (req, res) => {
 });
 
 /* ------------------------------------------------------------------
+   DELETE OWN RESIDENCY
+-------------------------------------------------------------------*/
+app.delete("/residencies/:id", authMiddleware, async (req, res) => {
+    try {
+        const residency = await Residency.findById(req.params.id);
+        if (!residency) {
+            return res.status(404).json({ message: "Residency not found" });
+        }
+        if (residency.userId !== req.user.id) {
+            return res.status(403).json({ message: "You can only delete your own residencies" });
+        }
+        await Residency.findByIdAndDelete(req.params.id);
+        return res.json({ message: "Residency deleted successfully" });
+    } catch (err) {
+        console.error("Delete Residency Error:", err);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
+/* ------------------------------------------------------------------
    REPORT A RESIDENCY (flag as fake)
 -------------------------------------------------------------------*/
 app.post("/residencies/:id/report", authMiddleware, [
@@ -240,6 +260,26 @@ app.post("/contact-request", authMiddleware, [
         return res.json({ message: "Contact request sent successfully" });
     } catch (err) {
         console.error("Contact Request Error:", err);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
+/* ------------------------------------------------------------------
+   DELETE OWN CONTACT REQUEST
+-------------------------------------------------------------------*/
+app.delete("/contact-requests/:requestId", authMiddleware, async (req, res) => {
+    try {
+        const request = await ContactRequest.findById(req.params.requestId);
+        if (!request) {
+            return res.status(404).json({ message: "Contact request not found" });
+        }
+        if (request.fromUserId !== req.user.id) {
+            return res.status(403).json({ message: "You can only delete your own contact requests" });
+        }
+        await ContactRequest.findByIdAndDelete(req.params.requestId);
+        return res.json({ message: "Contact request deleted successfully" });
+    } catch (err) {
+        console.error("Delete Contact Request Error:", err);
         return res.status(500).json({ message: "Internal Server Error" });
     }
 });
