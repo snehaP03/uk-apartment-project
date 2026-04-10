@@ -4,10 +4,9 @@ const helmet = require("helmet");
 const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
 const { body, validationResult } = require("express-validator");
 const Property = require("./models/Property");
+const Image = require("./models/Image");
 const authMiddleware = require("./middleware/authMiddleware");
 const responseTime = require("./middleware/responseTime");
 const healthRoutes = require("./routes/healthRoutes");
@@ -35,15 +34,20 @@ app.get("/", (req, res) => {
     res.json({ status: "OK", service: "Property Service", timestamp: new Date().toISOString() });
 });
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, "uploads"));
-    },
-    filename: (req, file, cb) => {
-        const uniqueName = Date.now() + "-" + file.originalname;
-        cb(null, uniqueName);
+/* Serve images from MongoDB */
+app.get("/uploads/:id", async (req, res) => {
+    try {
+        const image = await Image.findById(req.params.id);
+        if (!image) {
+            return res.status(404).json({ message: "Image not found" });
+        }
+        const buffer = Buffer.from(image.data, "base64");
+        res.set("Content-Type", image.contentType);
+        res.set("Cache-Control", "public, max-age=31536000, immutable");
+        return res.send(buffer);
+    } catch (err) {
+        console.error("Serve Image Error:", err);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 });
 
@@ -57,19 +61,29 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({
-    storage,
+    storage: multer.memoryStorage(),
     fileFilter,
     limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-app.post("/properties/upload", authMiddleware, upload.single("image"), (req, res) => {
+app.post("/properties/upload", authMiddleware, upload.single("image"), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: "No image uploaded" });
     }
-    return res.json({
-        message: "Image uploaded successfully",
-        filename: req.file.filename
-    });
+    try {
+        const image = await Image.create({
+            data: req.file.buffer.toString("base64"),
+            contentType: req.file.mimetype,
+            filename: req.file.originalname,
+        });
+        return res.json({
+            message: "Image uploaded successfully",
+            filename: image._id.toString()
+        });
+    } catch (err) {
+        console.error("Upload Image Error:", err);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
 });
 
 app.post("/properties/add", authMiddleware, [
@@ -156,14 +170,9 @@ app.delete("/properties/:id", authMiddleware, async (req, res) => {
             return res.status(403).json({ message: "You can only delete your own properties" });
         }
 
-        // Clean up uploaded image file from disk
+        // Clean up uploaded image from MongoDB
         if (property.imageKey) {
-            const imagePath = path.join(__dirname, "uploads", property.imageKey);
-            fs.unlink(imagePath, (err) => {
-                if (err && err.code !== "ENOENT") {
-                    console.error("Failed to delete image file:", err.message);
-                }
-            });
+            await Image.findByIdAndDelete(property.imageKey).catch(() => {});
         }
 
         await Property.findByIdAndDelete(req.params.id);

@@ -1,0 +1,11 @@
+{
+  "installCommand": "npm install && cd apartment-frontend && npm install",
+  "buildCommand": "cd apartment-frontend && npm run build && mv dist ../dist",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/api/auth/(.*)", "destination": "/api/auth" },
+    { "source": "/api/property/(.*)", "destination": "/api/property" },
+    { "source": "/api/residency/(.*)", "destination": "/api/residency" },
+    { "source": "/(.*)", "destination": "/" }
+  ]
+}

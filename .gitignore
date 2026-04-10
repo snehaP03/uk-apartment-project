@@ -10,6 +10,7 @@ services/property-service/src/uploads/*
 
 # Build output
 apartment-frontend/dist/
+dist/
 
 # OS files
 .DS_Store
