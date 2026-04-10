@@ -14,7 +14,7 @@ export default function AddResidency() {
   const submitResidency = async () => {
     if (!isLoggedIn) { alert("Please log in first."); navigate("/login"); return; }
     try {
-      const res = await fetch("${RESIDENCY_URL}/residencies", {
+      const res = await fetch(`${RESIDENCY_URL}/residencies`, {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ propertyId: id, fromYear, toYear, description }),
       });

@@ -22,7 +22,7 @@ export default function AddProperty() {
     setForm({ ...form, imageKey: fileName }); setPreview(URL.createObjectURL(file)); setUploading(true);
     const formData = new FormData(); formData.append("image", file); formData.append("fileName", fileName);
     try {
-      const response = await fetch("${PROPERTY_URL}/properties/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
+      const response = await fetch(`${PROPERTY_URL}/properties/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
       const data = await response.json(); if (!response.ok) { alert(data.message); return; }
       setUploading(false); alert("Image uploaded successfully!");
     } catch (error) { console.error(error); alert("Failed to upload image"); setUploading(false); }
@@ -34,7 +34,7 @@ export default function AddProperty() {
       return;
     }
     try {
-      const response = await fetch("${PROPERTY_URL}/properties/add", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(form) });
+      const response = await fetch(`${PROPERTY_URL}/properties/add`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(form) });
       const data = await response.json(); if (!response.ok) { alert(data.message); return; }
       alert("Property added successfully!"); window.location.href = "/";
     } catch (error) { console.error(error); alert("Failed to submit property"); }

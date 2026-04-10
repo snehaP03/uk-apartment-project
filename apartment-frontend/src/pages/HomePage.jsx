@@ -10,7 +10,7 @@ export default function HomePage() {
   const [featured, setFeatured] = useState([]);
 
   useEffect(() => {
-    fetch("${PROPERTY_URL}/properties")
+    fetch(`${PROPERTY_URL}/properties`)
       .then((res) => res.json())
       .then((data) => setFeatured(data.slice(0, 6)))
       .catch(console.error);

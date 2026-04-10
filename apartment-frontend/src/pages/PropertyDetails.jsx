@@ -25,7 +25,7 @@ export default function PropertyDetails() {
   const handleContactRequest = async (resident) => {
     if (!isLoggedIn) { alert("Please log in."); navigate("/login"); return; }
     try {
-      const res = await fetch("${RESIDENCY_URL}/contact-request", {
+      const res = await fetch(`${RESIDENCY_URL}/contact-request`, {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ toUserId: resident.userId, propertyId: id, message: contactMessage }),
       });

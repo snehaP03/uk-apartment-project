@@ -14,7 +14,7 @@ export default function VerifyEmail() {
   const handleVerify = async () => {
     setError(""); setMessage(""); setLoading(true);
     try {
-      const res = await fetch("${AUTH_URL}/auth/verify-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code }) });
+      const res = await fetch(`${AUTH_URL}/auth/verify-email`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error); setLoading(false); return; }
       setMessage("Email verified! Redirecting to login..."); setTimeout(() => navigate("/login"), 2000);
@@ -25,7 +25,7 @@ export default function VerifyEmail() {
     setError(""); setMessage("");
     if (!email) { setError("Please enter your email address."); return; }
     try {
-      const res = await fetch("${AUTH_URL}/auth/resend-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      const res = await fetch(`${AUTH_URL}/auth/resend-code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
       setMessage("New verification code sent to your email.");

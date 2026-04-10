@@ -19,8 +19,8 @@ export default function AdminDashboard() {
     const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
     Promise.all([
-      fetch("${RESIDENCY_URL}/admin/residencies/pending", { headers }).then((r) => r.json()),
-      fetch("${RESIDENCY_URL}/admin/residencies/reported", { headers }).then((r) => r.json()),
+      fetch(`${RESIDENCY_URL}/admin/residencies/pending`, { headers }).then((r) => r.json()),
+      fetch(`${RESIDENCY_URL}/admin/residencies/reported`, { headers }).then((r) => r.json()),
     ])
       .then(([pendingData, reportedData]) => {
         setPending(pendingData);
@@ -46,8 +46,8 @@ export default function AdminDashboard() {
       // Refresh data
       const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
       const [p, r] = await Promise.all([
-        fetch("${RESIDENCY_URL}/admin/residencies/pending", { headers }).then((r) => r.json()),
-        fetch("${RESIDENCY_URL}/admin/residencies/reported", { headers }).then((r) => r.json()),
+        fetch(`${RESIDENCY_URL}/admin/residencies/pending`, { headers }).then((r) => r.json()),
+        fetch(`${RESIDENCY_URL}/admin/residencies/reported`, { headers }).then((r) => r.json()),
       ]);
       setPending(p);
       setReported(r);
